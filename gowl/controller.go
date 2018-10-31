@@ -76,13 +76,15 @@ func (c *Controller) OK(content interface{}) ResponseInterface {
 
 func (c *Controller) NegotiationOffers(request *Request) []NegotiationOffer {
 	return []NegotiationOffer{
-		{"text/plain", c.Response},
-		{"application/json", c.JSONResponse},
-		{"application/xml", c.XMLResponse},
-		{"text/xml", c.XMLResponse},
+		// HTML template always goes first
 		{"text/html", func(statusCode int, content interface{}) ResponseInterface {
 			return c.TemplateResponse(statusCode, request.TemplateName(), content)
 		}},
+
+		// other supported offers
+		{"application/json", c.JSONResponse},
+		{"application/xml", c.XMLResponse},
+		{"text/xml", c.XMLResponse},
 	}
 }
 
