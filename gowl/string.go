@@ -1,8 +1,8 @@
 package gowl
 
 import (
-	"bytes"
 	"regexp"
+	"strings"
 	"unicode"
 )
 
@@ -58,7 +58,7 @@ func StringInSliceIndex(s string, slice []string) int {
 }
 
 func ToUnderscore(s string) string {
-	var buf bytes.Buffer
+	buf := new(strings.Builder)
 	var r rune
 	for i, c := range s {
 		if unicode.IsUpper(c) {

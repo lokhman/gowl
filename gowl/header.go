@@ -1,7 +1,6 @@
 package gowl
 
 import (
-	"bytes"
 	"net/http"
 	"sort"
 	"strconv"
@@ -16,7 +15,8 @@ type HeaderValue struct {
 }
 
 func (v HeaderValue) String() string {
-	buf := bytes.NewBufferString(v.Value)
+	buf := new(strings.Builder)
+	buf.WriteString(v.Value)
 	if len(v.Params) > 0 {
 		buf.WriteByte(';')
 		for key, value := range v.Params {
@@ -32,7 +32,7 @@ func (v HeaderValue) String() string {
 type HeaderValues []HeaderValue
 
 func (v HeaderValues) String() string {
-	var buf bytes.Buffer
+	buf := new(strings.Builder)
 	for i, value := range v {
 		if i > 0 {
 			buf.WriteByte(',')

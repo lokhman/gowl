@@ -56,8 +56,9 @@ func init() {
 	}
 
 	flag.Usage = func() {
-		str := "Usage: " + exec + " [flags] <command>\n\n"
-		str += "The commands are:\n"
+		out := flag.CommandLine.Output()
+		fmt.Fprintf(out, "Usage: %s [flags] <command>", exec)
+		fmt.Fprintln(out, "\n\nThe commands are:")
 		commands := make([]string, 0)
 		kernel.commands.Range(func(_, command interface{}) bool {
 			c := command.(CommandInterface)
@@ -66,9 +67,8 @@ func init() {
 			return true
 		})
 		sort.Strings(commands)
-		str += strings.Join(commands, "\n") + "\n\n"
-		str += "The flags are:\n"
-		fmt.Fprint(flag.CommandLine.Output(), str)
+		fmt.Fprint(out, strings.Join(commands, "\n"))
+		fmt.Fprintln(out, "\n\nThe flags are:")
 		flag.PrintDefaults()
 	}
 
@@ -186,9 +186,4 @@ func getCommand(name string) CommandInterface {
 func fatal(format string, a ...interface{}) {
 	fmt.Fprintln(stderr, fmt.Sprintf(format, a...))
 	os.Exit(1)
-}
-
-func noPanicWrapper(fn func() error) error {
-	defer func() { _ = recover() }()
-	return fn()
 }

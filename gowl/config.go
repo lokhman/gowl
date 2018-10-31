@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -35,21 +36,22 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	str := "Addr: " + c.Addr + "\n"
-	str += fmt.Sprintf("Enable TLS: %t\n", c.EnableTLS)
+	buf := new(strings.Builder)
+	fmt.Fprintf(buf, "Addr: %s\n", c.Addr)
+	fmt.Fprintf(buf, "Enable TLS: %t\n", c.EnableTLS)
 	if c.EnableTLS {
-		str += "Cert file: " + c.CertFile + "\n"
-		str += "Key file: " + c.KeyFile + "\n"
+		fmt.Fprintf(buf, "Cert file: %s\n", c.CertFile)
+		fmt.Fprintf(buf, "Key file: %s\n", c.KeyFile)
 	}
-	str += "Server name: " + c.ServerName + "\n"
-	str += fmt.Sprintf("Handle OPTIONS: %t\n", c.HandleOptions)
-	str += fmt.Sprintf("Handle method not allowed: %t\n", c.HandleMethodNotAllowed)
-	str += fmt.Sprintf("Redirect trailing slash: %t\n", c.RedirectTrailingSlash)
-	str += fmt.Sprintf("Redirect upper case path: %t\n", c.RedirectUpperCasePath)
-	str += "Template path: " + c.TemplatePath + "\n"
-	str += "Template file extension: " + c.TemplateFileExt + "\n"
-	str += fmt.Sprintf("Negotiate default offer: %t", c.NegotiateDefaultOffer)
-	return str
+	fmt.Fprintf(buf, "Server name: %s\n", c.ServerName)
+	fmt.Fprintf(buf, "Handle OPTIONS: %t\n", c.HandleOptions)
+	fmt.Fprintf(buf, "Handle method not allowed: %t\n", c.HandleMethodNotAllowed)
+	fmt.Fprintf(buf, "Redirect trailing slash: %t\n", c.RedirectTrailingSlash)
+	fmt.Fprintf(buf, "Redirect upper case path: %t\n", c.RedirectUpperCasePath)
+	fmt.Fprintf(buf, "Template path: %s\n", c.TemplatePath)
+	fmt.Fprintf(buf, "Template file extension: %s\n", c.TemplateFileExt)
+	fmt.Fprintf(buf, "Negotiate default offer: %t", c.NegotiateDefaultOffer)
+	return buf.String()
 }
 
 func NewConfig() *Config {

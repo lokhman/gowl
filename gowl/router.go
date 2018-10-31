@@ -103,7 +103,7 @@ func (r *route) String() string {
 	} else if len(r.methods) > 1 {
 		method = "[" + strings.Join(r.methods, "|") + "]"
 	}
-	return method + " " + r.path + " (" + r.name + ")"
+	return fmt.Sprintf("%s %s (%s)", method, r.path, r.name)
 }
 
 func (r *route) compile() {

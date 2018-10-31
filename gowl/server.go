@@ -112,7 +112,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// redirect request to lowercase path if configured
 	if s.config.RedirectUpperCasePath && StringContainsUpperCase(path) {
 		response = s.redirect(request, strings.ToLower(path))
-		s.serve(w, r, response, start)
+		s.serve(w, request, response, start)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// handle OPTIONS automatically
 		s.setAllowHeaderForPath(w, path)
 		response = NewResponse(http.StatusOK, nil)
-		s.serve(w, r, response, start)
+		s.serve(w, request, response, start)
 		return
 	case HandleMethodNotAllowed:
 		s.setAllowHeaderForPath(w, path)
@@ -132,13 +132,13 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// if handler not configured, return plain HTTP error
 		if handler = s.config.MethodNotAllowedHandler; handler == nil {
 			response = s.error(http.StatusMethodNotAllowed, "")
-			s.serve(w, r, response, start)
+			s.serve(w, request, response, start)
 			return
 		}
 	case RedirectTrailingSlash:
 		// fix trailing slash
 		response = s.redirect(request, r.URL.Path+"/")
-		s.serve(w, r, response, start)
+		s.serve(w, request, response, start)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// if handler not configured, return plain HTTP error
 		if handler = s.config.NotFoundHandler; handler == nil {
 			response = s.error(http.StatusNotFound, "")
-			s.serve(w, r, response, start)
+			s.serve(w, request, response, start)
 			return
 		}
 	}
@@ -156,7 +156,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// if handler is still not defined
 	if handler == nil {
 		response = s.error(http.StatusNotImplemented, "")
-		s.serve(w, r, response, start)
+		s.serve(w, request, response, start)
 		return
 	}
 
@@ -203,7 +203,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			stack := getMainStackTrace(e.(stackTracer).StackTrace())
 			debug := fmt.Sprintf("%s\n%+v", err, stack)
 			response = s.error(http.StatusInternalServerError, debug)
-			s.serve(w, r, response, start)
+			s.serve(w, request, response, start)
 		}
 	}()
 
@@ -232,10 +232,10 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write response to the connection
-	s.serve(w, r, response, start)
+	s.serve(w, request, response, start)
 }
 
-func (s *server) serve(w http.ResponseWriter, r *http.Request, response ResponseInterface, start time.Time) {
+func (s *server) serve(w http.ResponseWriter, request *Request, response ResponseInterface, start time.Time) {
 	defer func() { _ = recover() }()
 
 	if s.config.ServerName != "" {
@@ -252,7 +252,15 @@ func (s *server) serve(w http.ResponseWriter, r *http.Request, response Response
 		Error.Print(err)
 	}
 
-	Debug.Printf("%3d %s %s (%v)", statusCode, r.Method, r.URL.Path, time.Now().Sub(start))
+	buf := new(strings.Builder)
+	fmt.Fprintf(buf, "%3d %s %s ", statusCode, request.Method, request.URL.Path)
+	if name := request.Param(":route"); name != "" {
+		buf.WriteByte('[')
+		buf.WriteString(name)
+		buf.WriteString("] ")
+	}
+	fmt.Fprintf(buf, "(%v)", time.Now().Sub(start))
+	Debug.Print(buf.String())
 }
 
 func (_ *server) redirect(request *Request, url string) ResponseInterface {
