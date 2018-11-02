@@ -1,8 +1,6 @@
 package gowl
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,34 +34,14 @@ func (c *Controller) Routing(r RouterInterface) {
 	r.GET("/", c.IndexAction)
 }
 
-func (c *Controller) JSONResponse(statusCode int, content interface{}) ResponseInterface {
-	response := NewResponse(statusCode, func(w io.Writer) error {
-		return json.NewEncoder(w).Encode(content)
-	})
-	response.header.Set("Content-Type", "application/json; charset=utf-8")
-	return response
-}
-
-func (c *Controller) XMLResponse(statusCode int, content interface{}) ResponseInterface {
-	response := NewResponse(statusCode, func(w io.Writer) error {
-		return xml.NewEncoder(w).Encode(content)
-	})
-	response.header.Set("Content-Type", "application/xml; charset=utf-8")
-	return response
-}
-
 func (c *Controller) TemplateResponse(statusCode int, templateName string, content interface{}) ResponseInterface {
 	template := c.server.templates[templateName]
 	if template == nil {
 		panic(fmt.Sprintf(`gowl: cannot find template with name "%s"`, templateName))
 	}
-	return c.StreamResponse(statusCode, func(w io.Writer) error {
+	return c.Response(statusCode, func(w io.Writer) error {
 		return template.Execute(w, content)
 	})
-}
-
-func (c *Controller) StreamResponse(statusCode int, content func(w io.Writer) error) ResponseInterface {
-	return NewResponse(statusCode, content)
 }
 
 func (c *Controller) Response(statusCode int, content interface{}) ResponseInterface {
