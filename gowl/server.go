@@ -253,13 +253,13 @@ func (s *server) serve(w http.ResponseWriter, request *Request, response Respons
 	}
 
 	buf := new(strings.Builder)
-	fmt.Fprintf(buf, "%3d %s %s ", statusCode, request.Method, request.URL.Path)
+	fmt.Fprintf(buf, "%3d %s %s", statusCode, request.Method, request.URL.Path)
 	if name := request.Param(":route"); name != "" {
-		buf.WriteByte('[')
+		buf.WriteString(" [")
 		buf.WriteString(name)
-		buf.WriteString("] ")
+		buf.WriteByte(']')
 	}
-	fmt.Fprintf(buf, "(%v)", time.Now().Sub(start))
+	fmt.Fprintf(buf, " (%v)", time.Now().Sub(start))
 	Debug.Print(buf.String())
 }
 
