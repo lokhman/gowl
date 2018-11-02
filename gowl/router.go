@@ -42,7 +42,7 @@ type RouteInterface interface {
 	On(eventType EventType, listener func(event EventInterface)) RouteInterface
 	String() string
 
-	compile()
+	compile() bool
 }
 
 // route
@@ -60,6 +60,8 @@ type route struct {
 	rePrefix string
 
 	trailingSlash bool
+
+	compiled bool
 }
 
 func (r *route) SetName(name string) RouteInterface {
@@ -106,7 +108,11 @@ func (r *route) String() string {
 	return fmt.Sprintf("%s %s (%s)", method, r.path, r.name)
 }
 
-func (r *route) compile() {
+func (r *route) compile() bool {
+	if r.compiled {
+		return false
+	}
+
 	if r.name == "" {
 		name := getFuncName(r.handler)
 		name = strings.TrimPrefix(name, "main.")
@@ -197,6 +203,8 @@ func (r *route) compile() {
 
 	// compile flags
 	r.flags.Clear(defaultState)
+	r.compiled = true
+	return true
 }
 
 func newRoute(methods []string, path string, handler Handler) *route {
@@ -228,15 +236,16 @@ type RouterInterface interface {
 
 	On(eventType EventType, listener func(event EventInterface))
 
-	compile() []*route
+	compile() (routes []*route, ok bool)
 }
 
 // router
 type router struct {
-	emitter EventEmitter
-	routes  []*route
-	prefix  string
-	flags   Flag
+	emitter  EventEmitter
+	routes   []*route
+	prefix   string
+	flags    Flag
+	compiled bool
 }
 
 func (r *router) SetPrefix(path string) {
@@ -297,8 +306,13 @@ func (r *router) On(eventType EventType, listener func(event EventInterface)) {
 	r.emitter.On(eventType, listener)
 }
 
-func (r *router) compile() []*route {
-	for _, route := range r.routes {
+func (r *router) compile() (routes []*route, ok bool) {
+	routes = r.routes
+	if r.compiled {
+		return
+	}
+
+	for _, route := range routes {
 		if n := len(r.prefix); n > 1 {
 			path := route.path
 			route.path = r.prefix
@@ -314,7 +328,7 @@ func (r *router) compile() []*route {
 			route.flags = r.flags
 		}
 
-		// copy events from router emitter
+		// bind events from router emitter
 		for eventType, listeners := range r.emitter {
 			for _, listener := range listeners {
 				route.emitter.On(eventType, listener)
@@ -322,7 +336,9 @@ func (r *router) compile() []*route {
 		}
 		route.compile()
 	}
-	return r.routes
+
+	ok = true
+	return
 }
 
 func NewRouter(flags Flag) RouterInterface {
@@ -335,8 +351,10 @@ func NewRouter(flags Flag) RouterInterface {
 
 // compiledRouter
 type compiledRouter struct {
-	routes []*route
-	names  map[string]int
+	routes   []*route
+	names    map[string]int
+	emitter  EventEmitter
+	compiled bool
 }
 
 func (r *compiledRouter) normalizeName(name string) string {
@@ -352,11 +370,12 @@ func (r *compiledRouter) normalizeName(name string) string {
 }
 
 func (r *compiledRouter) addRouter(router RouterInterface) {
-	routes := router.compile()
-	for _, route := range routes {
-		route.name = r.normalizeName(route.name)
+	if routes, ok := router.compile(); ok && len(routes) > 0 {
+		for _, route := range routes {
+			route.name = r.normalizeName(route.name)
+		}
+		r.routes = append(r.routes, routes...)
 	}
-	r.routes = append(r.routes, routes...)
 }
 
 func (r *compiledRouter) allowedMethods(path string) (methods []string) {
@@ -518,10 +537,29 @@ func (r *compiledRouter) url(name string, params StringMap) *url.URL {
 	}
 }
 
+func (r *compiledRouter) compile() bool {
+	if r.compiled {
+		return false
+	}
+
+	for _, route := range r.routes {
+		// bind events from compiledRouter emitter
+		for eventType, listeners := range r.emitter {
+			for _, listener := range listeners {
+				route.emitter.On(eventType, listener)
+			}
+		}
+	}
+
+	r.compiled = true
+	return true
+}
+
 func newCompiledRouter() *compiledRouter {
 	return &compiledRouter{
-		routes: make([]*route, 0),
-		names:  make(map[string]int),
+		routes:  make([]*route, 0),
+		names:   make(map[string]int),
+		emitter: make(EventEmitter),
 	}
 }
 

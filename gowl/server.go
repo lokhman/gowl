@@ -16,6 +16,7 @@ type ServerInterface interface {
 	NewRouter() RouterInterface
 	RegisterRouter(router RouterInterface, routers ...RouterInterface)
 	RegisterController(controller ControllerInterface, controllers ...ControllerInterface)
+	On(eventType EventType, listener func(event EventInterface))
 	LoadTemplates()
 	Listen() error
 	String() string
@@ -44,6 +45,10 @@ func (s *server) RegisterController(controller ControllerInterface, controllers 
 	s.registerControllers(append([]ControllerInterface{controller}, controllers...))
 }
 
+func (s *server) On(eventType EventType, listener func(event EventInterface)) {
+	s.router.emitter.On(eventType, listener)
+}
+
 func (s *server) LoadTemplates() {
 	if s.templates != nil {
 		return
@@ -60,6 +65,10 @@ func (s *server) LoadTemplates() {
 }
 
 func (s *server) Listen() error {
+	if !s.router.compile() {
+		return nil
+	}
+
 	server := &http.Server{
 		Addr:    s.config.Addr,
 		Handler: s,
