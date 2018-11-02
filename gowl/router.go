@@ -3,7 +3,9 @@ package gowl
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -20,6 +22,9 @@ const RouteParamRequirement = `[^/]+`
 
 var reRoutePathParams = regexp.MustCompile(`{([a-z0-9_]+)(?:<(.*?)>)?(?:\?([^}]+))?}`)
 var reRouteParamRequirement = regexp.MustCompile(`^` + RouteParamRequirement + `$`)
+
+// Handler
+type Handler func(r *Request) ResponseInterface
 
 // ParamAttributes
 type ParamAttributes struct {
@@ -60,8 +65,7 @@ type route struct {
 	rePrefix string
 
 	trailingSlash bool
-
-	compiled bool
+	compiled      bool
 }
 
 func (r *route) SetName(name string) RouteInterface {
@@ -460,7 +464,7 @@ func (r *compiledRouter) match(method, path string) (*route, StringMap, Flag) {
 		}
 
 		// match if any method allowed or method is explicitly defined
-		if len(route.methods) == 0 || StringInSlice(method, route.methods) {
+		if len(route.methods) == 0 || IndexString(method, route.methods) != -1 {
 			if redirectTrailingSlash {
 				return nil, nil, RedirectTrailingSlash
 			}
@@ -598,4 +602,8 @@ func assertPath(path string) {
 	next:
 		i++
 	}
+}
+
+func getFuncName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

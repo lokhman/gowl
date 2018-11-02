@@ -31,8 +31,6 @@ type Config struct {
 	TemplateFileExt string `json:"template_file_ext"`
 
 	TemplateFunc template.FuncMap `json:"-"`
-
-	NegotiateDefaultOffer bool `json:"negotiate_default_offer"`
 }
 
 func (c *Config) String() string {
@@ -50,21 +48,20 @@ func (c *Config) String() string {
 	fmt.Fprintf(buf, "Redirect upper case path: %t\n", c.RedirectUpperCasePath)
 	fmt.Fprintf(buf, "Template path: %s\n", c.TemplatePath)
 	fmt.Fprintf(buf, "Template file extension: %s\n", c.TemplateFileExt)
-	fmt.Fprintf(buf, "Negotiate default offer: %t", c.NegotiateDefaultOffer)
 	return buf.String()
 }
 
 func NewConfig() *Config {
-	c := new(Config)
-	c.Addr = ":8000"
-	c.ServerName = ServerName
-	c.HandleOptions = true
-	c.HandleMethodNotAllowed = true
-	c.RedirectTrailingSlash = true
-	c.RedirectUpperCasePath = true
-	c.TemplatePath = filepath.Join(execPath, "templates")
-	c.TemplateFileExt = ".html"
-	return c
+	return &Config{
+		Addr:                   ":8000",
+		ServerName:             ServerName,
+		HandleOptions:          true,
+		HandleMethodNotAllowed: true,
+		RedirectTrailingSlash:  true,
+		RedirectUpperCasePath:  true,
+		TemplatePath:           filepath.Join(execPath, "templates"),
+		TemplateFileExt:        ".html",
+	}
 }
 
 func LoadConfig(filename string) (config *Config, err error) {

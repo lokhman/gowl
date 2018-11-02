@@ -9,6 +9,7 @@ import (
 
 const asciiSpaceSet = " \t\r\n"
 
+// HeaderValue
 type HeaderValue struct {
 	Value  string
 	Params StringMap
@@ -29,6 +30,7 @@ func (v HeaderValue) String() string {
 	return buf.String()
 }
 
+// HeaderValues
 type HeaderValues []HeaderValue
 
 func (v HeaderValues) String() string {
@@ -40,11 +42,6 @@ func (v HeaderValues) String() string {
 		buf.WriteString(value.String())
 	}
 	return buf.String()
-}
-
-type AcceptHeaderValue struct {
-	HeaderValue
-	Weight float32
 }
 
 func ParseHeaderMultiValues(header http.Header, key string) HeaderValues {
@@ -102,6 +99,13 @@ func ParseHeaderMultiValues(header http.Header, key string) HeaderValues {
 	return values
 }
 
+// AcceptHeaderValue
+type AcceptHeaderValue struct {
+	HeaderValue
+	Weight float32
+}
+
+// AcceptHeaderValues
 type AcceptHeaderValues []AcceptHeaderValue
 
 var acceptHeaderValuesCompare = []func(p, q *AcceptHeaderValue) bool{
@@ -183,6 +187,38 @@ func NegotiateAcceptHeader(header http.Header, key string, offers []string) stri
 	return ""
 }
 
+func NegotiateRequestListener(offers []string, defaultToFirstOffer bool) func(event EventInterface) {
+	return func(event EventInterface) {
+		if len(offers) == 0 {
+			return
+		}
+
+		ev := event.(*RequestEvent)
+		request := ev.Request()
+
+		offer := NegotiateAcceptHeader(request.Header, "Accept", offers)
+		if offer == "" && !defaultToFirstOffer {
+			link := make(HeaderValues, len(offers))
+			for i, offer := range offers {
+				link[i] = HeaderValue{
+					Value:  "<" + request.URL.String() + ">",
+					Params: StringMap{"type": offer},
+				}
+			}
+
+			response := ErrorResponse(http.StatusNotAcceptable, "")
+			response.Header().Add("Link", link.String())
+			ev.SetResponse(response)
+			return
+		} else if defaultToFirstOffer {
+			offer = offers[0]
+		}
+
+		request.params[":accept"] = offer
+	}
+}
+
+// ...
 func skipSpace(s string, i *int) bool {
 	n := len(s)
 	for *i < n {

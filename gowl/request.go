@@ -1,6 +1,7 @@
 package gowl
 
 import (
+	"html/template"
 	"net"
 	"net/http"
 	"strings"
@@ -60,9 +61,10 @@ func (r *Request) GetURL(name string, params StringMap, absolute bool) string {
 	return url.String()
 }
 
-func (r *Request) TemplateName() string {
+func (r *Request) Template() *template.Template {
 	if path := r.params.Get(":route"); path != "" {
-		return strings.Replace(path, ".", "/", -1) + r.server.config.TemplateFileExt
+		name := strings.Replace(path, ".", "/", -1)
+		return r.server.templates[name+r.server.config.TemplateFileExt]
 	}
-	return ""
+	return nil
 }

@@ -35,22 +35,18 @@ func (sm StringMap) Copy() StringMap {
 }
 
 // ...
-func StringContainsUpperCase(s string) bool {
-	for _, c := range s {
-		if unicode.IsUpper(c) {
-			return true
-		}
-	}
-	return false
-}
-
-func StringInSlice(s string, slice []string) bool {
-	return StringInSliceIndex(s, slice) != -1
-}
-
-func StringInSliceIndex(s string, slice []string) int {
+func IndexString(s string, slice []string) int {
 	for i, str := range slice {
 		if s == str {
+			return i
+		}
+	}
+	return -1
+}
+
+func IndexUpper(s string) int {
+	for i, c := range s {
+		if unicode.IsUpper(c) {
 			return i
 		}
 	}

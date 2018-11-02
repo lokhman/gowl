@@ -30,11 +30,11 @@ func getMainStackTrace(stack errors.StackTrace) errors.StackTrace {
 	return stack[start:]
 }
 
-func NewErrorResponse(statusCode int, serverName, debug string) ResponseInterface {
+func ErrorResponse(statusCode int, debug string) ResponseInterface {
 	response := NewResponse(statusCode, func(w io.Writer) error {
-		return errorTemplate.Execute(w, StringMap{
+		return ErrorTemplate.Execute(w, StringMap{
 			"name":   fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode)),
-			"server": serverName,
+			"server": ServerName,
 			"debug":  debug,
 		})
 	})
@@ -43,7 +43,7 @@ func NewErrorResponse(statusCode int, serverName, debug string) ResponseInterfac
 	return response
 }
 
-var errorTemplate = template.Must(template.New("error").Parse(`<!DOCTYPE html>
+var ErrorTemplate = template.Must(template.New("error").Parse(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -54,9 +54,7 @@ var errorTemplate = template.Must(template.New("error").Parse(`<!DOCTYPE html>
 	{{if .debug -}}
 		<pre>{{.debug}}</pre>
 	{{- end}}
-	{{if .server -}}
-		<hr style="border-style: outset">
-		<small>{{.server}}</small>
-	{{- end}}
+    <hr style="border-style: outset">
+	<small>{{.server}}</small>
 </body>
 </html>`))

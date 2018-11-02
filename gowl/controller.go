@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -52,72 +53,8 @@ func (c *Controller) OK(content interface{}) ResponseInterface {
 	return c.Response(http.StatusOK, content)
 }
 
-func (c *Controller) NegotiationOffers(request *Request) []NegotiationOffer {
-	return []NegotiationOffer{
-		// HTML template always goes first
-		{"text/html", func(statusCode int, content interface{}) ResponseInterface {
-			return c.TemplateResponse(statusCode, request.TemplateName(), content)
-		}},
-
-		// other supported offers
-		{"application/json", c.JSONResponse},
-		{"application/xml", c.XMLResponse},
-		{"text/xml", c.XMLResponse},
-	}
-}
-
-func (c *Controller) NegotiateResponse(request *Request, response *Response, offers []NegotiationOffer) ResponseInterface {
-	if len(offers) == 0 {
-		offers = c.NegotiationOffers(request)
-	}
-
-	offerTypes := make([]string, len(offers))
-	for i, offer := range offers {
-		offerTypes[i] = offer.Type
-		i++
-	}
-
-	offerType := NegotiateAcceptHeader(request.Header, "Accept", offerTypes)
-	if offerType == "" && !c.server.config.NegotiateDefaultOffer {
-		link := make(HeaderValues, len(offerTypes))
-		for i, offerType := range offerTypes {
-			link[i] = HeaderValue{
-				Value:  "<" + request.URL.String() + ">",
-				Params: StringMap{"type": offerType},
-			}
-		}
-
-		response := NewErrorResponse(http.StatusNotAcceptable, c.server.config.ServerName, "")
-		response.Header().Add("Link", link.String())
-		return response
-	} else if c.server.config.NegotiateDefaultOffer {
-		offerType = offerTypes[0]
-	}
-
-	offerResponse := offers[StringInSliceIndex(offerType, offerTypes)].Response
-	negotiatedResponse := offerResponse(response.statusCode, response.Content)
-	copyHeader(negotiatedResponse.Header(), response.header)
-	return negotiatedResponse
-}
-
-func (c *Controller) NegotiateResponseListener(event EventInterface) {
-	ev := event.(*ResponseEvent)
-	if response, ok := ev.Response().(*Response); ok {
-		ev.SetResponse(c.NegotiateResponse(ev.Request(), response, nil))
-	}
-}
-
 func (c *Controller) IndexAction(r *Request) ResponseInterface {
 	return c.OK("Welcome!")
-}
-
-// NegotiationResponse
-type NegotiationResponse func(statusCode int, content interface{}) ResponseInterface
-
-// NegotiationOffer
-type NegotiationOffer struct {
-	Type     string
-	Response NegotiationResponse
 }
 
 // ...
@@ -125,4 +62,8 @@ func getControllerName(controller ControllerInterface) string {
 	name := getTypeName(controller)
 	name = strings.TrimLeft(name, "*")
 	return strings.TrimPrefix(name, "main.")
+}
+
+func getTypeName(i interface{}) string {
+	return reflect.TypeOf(i).String()
 }

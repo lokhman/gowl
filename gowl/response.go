@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 
@@ -100,7 +101,7 @@ func (r *emptyResponse) WriteResponse(w http.ResponseWriter) error {
 	return nil
 }
 
-func NewEmptyResponse() ResponseInterface {
+func EmptyResponse() ResponseInterface {
 	return &emptyResponse{}
 }
 
@@ -129,7 +130,7 @@ func (r *redirectResponse) WriteResponse(w http.ResponseWriter) error {
 	return nil
 }
 
-func NewRedirectResponse(request *Request, statusCode int, url string) ResponseInterface {
+func RedirectResponse(request *Request, statusCode int, url string) ResponseInterface {
 	return &redirectResponse{
 		request:    request,
 		statusCode: statusCode,
@@ -139,7 +140,7 @@ func NewRedirectResponse(request *Request, statusCode int, url string) ResponseI
 }
 
 // ...
-func NewStreamResponse(statusCode int, content func(w io.Writer) error) ResponseInterface {
+func StreamResponse(statusCode int, content func(w io.Writer) error) ResponseInterface {
 	return NewResponse(statusCode, content)
 }
 
@@ -157,4 +158,13 @@ func XMLResponse(statusCode int, content interface{}) ResponseInterface {
 	})
 	response.header.Set("Content-Type", "application/xml; charset=utf-8")
 	return response
+}
+
+func TemplateResponse(statusCode int, template *template.Template, content interface{}) ResponseInterface {
+	if template == nil {
+		panic("gowl: cannot render nil template")
+	}
+	return NewResponse(statusCode, func(w io.Writer) error {
+		return template.Execute(w, content)
+	})
 }

@@ -81,7 +81,9 @@ func (s *server) Listen() error {
 }
 
 func (s *server) String() string {
-	str := s.config.String() + "\n"
+	buf := new(strings.Builder)
+	buf.WriteString(s.config.String())
+	buf.WriteByte('\n')
 	if len(s.router.routes) > 0 {
 		out := make([]string, len(s.router.routes))
 		pad := make([]int, len(s.router.routes))
@@ -103,11 +105,12 @@ func (s *server) String() string {
 			p := strings.Repeat(" ", max-pad[i]+1)
 			out[i] = "  " + strings.Replace(str, " ", p, 1)
 		}
-		str += "Routes:\n" + strings.Join(out, "\n")
+		buf.WriteString("Routes:\n")
+		buf.WriteString(strings.Join(out, "\n"))
 	} else {
-		str += "Routes: <no routes>"
+		buf.WriteString("Routes: <no routes>")
 	}
-	return str
+	return buf.String()
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +122,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var response ResponseInterface
 
 	// redirect request to lowercase path if configured
-	if s.config.RedirectUpperCasePath && StringContainsUpperCase(path) {
+	if s.config.RedirectUpperCasePath && IndexUpper(path) != -1 {
 		response = s.redirect(request, strings.ToLower(path))
 		s.serve(w, request, response, start)
 		return
@@ -237,7 +240,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// still no response?
 	if response == nil {
-		response = NewEmptyResponse()
+		response = EmptyResponse()
 	}
 
 	// write response to the connection
@@ -277,15 +280,15 @@ func (_ *server) redirect(request *Request, url string) ResponseInterface {
 	if request.Method != GET {
 		statusCode = http.StatusPermanentRedirect
 	}
-	return NewRedirectResponse(request, statusCode, url)
+	return RedirectResponse(request, statusCode, url)
 }
 
-func (s *server) error(statusCode int, debug string) ResponseInterface {
+func (_ *server) error(statusCode int, debug string) ResponseInterface {
 	if !*_debug && debug != "" {
 		Error.Print(debug)
 		debug = ""
 	}
-	return NewErrorResponse(statusCode, s.config.ServerName, debug)
+	return ErrorResponse(statusCode, debug)
 }
 
 func (s *server) setAllowHeaderForPath(w http.ResponseWriter, path string) {
