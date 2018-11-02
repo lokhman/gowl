@@ -8,6 +8,16 @@ const (
 	EventPanic    EventType = "panic"
 )
 
+// EventEmitterInterface
+type EventEmitterInterface interface {
+	On(eventType EventType, listener func(event EventInterface))
+	Emit(eventType EventType, event EventInterface)
+	Listeners(eventType EventType) []func(EventInterface)
+	HasListeners(eventType EventType) bool
+	RemoveAllListeners(eventType EventType)
+	Copy() EventEmitter
+}
+
 // EventEmitter
 type EventEmitter map[EventType][]func(EventInterface)
 
