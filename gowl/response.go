@@ -1,6 +1,8 @@
 package gowl
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -134,4 +136,25 @@ func NewRedirectResponse(request *Request, statusCode int, url string) ResponseI
 		header:     make(http.Header),
 		url:        url,
 	}
+}
+
+// ...
+func NewStreamResponse(statusCode int, content func(w io.Writer) error) ResponseInterface {
+	return NewResponse(statusCode, content)
+}
+
+func JSONResponse(statusCode int, content interface{}) ResponseInterface {
+	response := NewResponse(statusCode, func(w io.Writer) error {
+		return json.NewEncoder(w).Encode(content)
+	})
+	response.header.Set("Content-Type", "application/json; charset=utf-8")
+	return response
+}
+
+func XMLResponse(statusCode int, content interface{}) ResponseInterface {
+	response := NewResponse(statusCode, func(w io.Writer) error {
+		return xml.NewEncoder(w).Encode(content)
+	})
+	response.header.Set("Content-Type", "application/xml; charset=utf-8")
+	return response
 }
