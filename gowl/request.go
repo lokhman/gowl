@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/lokhman/gowl/types"
 )
 
 const (
@@ -23,16 +25,16 @@ type Request struct {
 	*http.Request
 
 	server *server
-	params StringMap
+	params types.StringMap
 
-	Data Data
+	Data types.Data
 }
 
 func (r *Request) Param(name string) string {
 	return r.params.Get(name)
 }
 
-func (r *Request) Params() StringMap {
+func (r *Request) Params() types.StringMap {
 	return r.params.Copy()
 }
 
@@ -52,7 +54,7 @@ func (r *Request) ClientIP() (ip string) {
 	return
 }
 
-func (r *Request) GetURL(name string, params StringMap, absolute bool) string {
+func (r *Request) GetURL(name string, params types.StringMap, absolute bool) string {
 	url := r.server.router.url(name, params)
 	if absolute {
 		url.Scheme = r.URL.Scheme

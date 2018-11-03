@@ -7,6 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lokhman/gowl/events"
+	"github.com/lokhman/gowl/helpers"
+	"github.com/lokhman/gowl/httputil"
+	"github.com/lokhman/gowl/templates"
+	"github.com/lokhman/gowl/types"
 	"github.com/pkg/errors"
 )
 
@@ -16,7 +21,7 @@ type ServerInterface interface {
 	NewRouter() RouterInterface
 	RegisterRouter(router RouterInterface, routers ...RouterInterface)
 	RegisterController(controller ControllerInterface, controllers ...ControllerInterface)
-	On(eventType EventType, listener func(event EventInterface))
+	On(eventType events.EventType, listener func(event EventInterface))
 	LoadTemplates()
 	Listen() error
 	String() string
@@ -45,7 +50,7 @@ func (s *server) RegisterController(controller ControllerInterface, controllers 
 	s.registerControllers(append([]ControllerInterface{controller}, controllers...))
 }
 
-func (s *server) On(eventType EventType, listener func(event EventInterface)) {
+func (s *server) On(eventType events.EventType, listener func(event EventInterface)) {
 	s.router.emitter.On(eventType, listener)
 }
 
@@ -57,11 +62,11 @@ func (s *server) LoadTemplates() {
 	for name, fn := range s.config.TemplateFunc {
 		funcMap[name] = fn
 	}
-	templates, err := loadTemplates(s.config.TemplatePath, s.config.TemplateFileExt, funcMap)
+	t, err := templates.Load(s.config.TemplatePath, s.config.TemplateFileExt, funcMap)
 	if err != nil {
 		panic(fmt.Sprintf("gowl: cannot load templates: %s", err.Error()))
 	}
-	s.templates = templates
+	s.templates = t
 }
 
 func (s *server) Listen() error {
@@ -122,7 +127,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var response ResponseInterface
 
 	// redirect request to lowercase path if configured
-	if s.config.RedirectUpperCasePath && IndexUpper(path) != -1 {
+	if s.config.RedirectUpperCasePath && helpers.IndexUpper(path) != -1 {
 		response = s.redirect(request, strings.ToLower(path))
 		s.serve(w, request, response, start)
 		return
@@ -173,8 +178,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add special parameters
-	params[":route"] = route.name
-	params[":path"] = route.path
+	params.Set(":route", route.name)
+	params.Set(":path", route.path)
 	request.params = params
 
 	// resolve request scheme
@@ -256,7 +261,7 @@ func (s *server) serve(w http.ResponseWriter, request *Request, response Respons
 
 	statusCode := response.StatusCode()
 	if _, ok := response.(ResponseWriterInterface); !ok {
-		copyHeader(w.Header(), response.Header())
+		httputil.CopyHeader(w.Header(), response.Header())
 		w.WriteHeader(statusCode)
 	}
 
@@ -318,7 +323,7 @@ func (s *server) registerControllers(controllers []ControllerInterface) {
 	}
 }
 
-func (s *server) defaultRouterFlags() (flags Flag) {
+func (s *server) defaultRouterFlags() (flags types.Flag) {
 	if s.config.HandleOptions {
 		flags.Set(HandleOPTIONS)
 	}

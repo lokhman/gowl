@@ -1,76 +1,20 @@
 package gowl
 
-type EventType string
-
-const (
-	EventRequest  EventType = "request"
-	EventResponse EventType = "response"
-	EventPanic    EventType = "panic"
+import (
+	"github.com/lokhman/gowl/events"
 )
 
-// EventEmitter
-type EventEmitter map[EventType][]func(EventInterface)
+type EventInterface = events.EventInterface
 
-func (e EventEmitter) On(eventType EventType, listener func(event EventInterface)) {
-	e[eventType] = append(e.Listeners(eventType), listener)
-}
-
-func (e EventEmitter) Emit(eventType EventType, event EventInterface) {
-	for _, listener := range e.Listeners(eventType) {
-		listener(event)
-
-		if event.isPropagationStopped() {
-			break
-		}
-	}
-}
-
-func (e EventEmitter) Listeners(eventType EventType) []func(EventInterface) {
-	return e[eventType]
-}
-
-func (e EventEmitter) HasListeners(eventType EventType) bool {
-	return len(e.Listeners(eventType)) > 0
-}
-
-func (e EventEmitter) RemoveAllListeners(eventType EventType) {
-	delete(e, eventType)
-}
-
-func (e EventEmitter) Copy() EventEmitter {
-	emitter := make(EventEmitter)
-	for eventType, listeners := range e {
-		var _listeners []func(EventInterface)
-		copy(_listeners, listeners)
-		emitter[eventType] = _listeners
-	}
-	return emitter
-}
-
-// EventInterface
-type EventInterface interface {
-	StopPropagation()
-	isPropagationStopped() bool
-}
-
-// Event
-type Event struct {
-	Data Data
-
-	propagationStopped bool
-}
-
-func (e *Event) StopPropagation() {
-	e.propagationStopped = true
-}
-
-func (e *Event) isPropagationStopped() bool {
-	return e.propagationStopped
-}
+const (
+	EventRequest  events.EventType = "request"
+	EventResponse events.EventType = "response"
+	EventPanic    events.EventType = "panic"
+)
 
 // RequestEvent
 type RequestEvent struct {
-	Event
+	events.Event
 
 	request  *Request
 	response ResponseInterface
@@ -86,7 +30,7 @@ func (e *RequestEvent) SetResponse(response ResponseInterface) {
 
 // ResponseEvent
 type ResponseEvent struct {
-	Event
+	events.Event
 
 	request  *Request
 	response ResponseInterface
@@ -106,7 +50,7 @@ func (e *ResponseEvent) SetResponse(response ResponseInterface) {
 
 // PanicEvent
 type PanicEvent struct {
-	Event
+	events.Event
 
 	error error
 }

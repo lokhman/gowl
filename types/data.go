@@ -1,4 +1,4 @@
-package gowl
+package types
 
 type Data map[string]interface{}
 

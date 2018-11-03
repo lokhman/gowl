@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 	"strings"
+
+	"github.com/lokhman/gowl/helpers"
 )
 
 // ControllerInterface
@@ -59,11 +60,7 @@ func (c *Controller) IndexAction(r *Request) ResponseInterface {
 
 // ...
 func getControllerName(controller ControllerInterface) string {
-	name := getTypeName(controller)
+	name := helpers.GetTypeName(controller)
 	name = strings.TrimLeft(name, "*")
 	return strings.TrimPrefix(name, "main.")
-}
-
-func getTypeName(i interface{}) string {
-	return reflect.TypeOf(i).String()
 }

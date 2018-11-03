@@ -3,15 +3,17 @@ package gowl
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/lokhman/gowl/events"
+	"github.com/lokhman/gowl/helpers"
+	"github.com/lokhman/gowl/types"
 )
 
 const (
-	defaultState Flag = 1 << iota
+	defaultState types.Flag = 1 << iota
 
 	HandleOPTIONS
 	HandleMethodNotAllowed
@@ -43,8 +45,8 @@ type RouteInterface interface {
 	SetName(name string) RouteInterface
 	AddParam(name string, attr ParamAttributes) RouteInterface
 	SetParams(params Params) RouteInterface
-	SetFlag(flag Flag) RouteInterface
-	On(eventType EventType, listener func(event EventInterface)) RouteInterface
+	SetFlag(flag types.Flag) RouteInterface
+	On(eventType events.EventType, listener func(event EventInterface)) RouteInterface
 	String() string
 
 	compile() bool
@@ -52,14 +54,14 @@ type RouteInterface interface {
 
 // route
 type route struct {
-	emitter EventEmitter
+	emitter events.Emitter
 
 	name    string
 	methods []string
 	path    string
 	handler Handler
 	params  Params
-	flags   Flag
+	flags   types.Flag
 
 	rePath   *regexp.Regexp
 	rePrefix string
@@ -89,7 +91,7 @@ func (r *route) SetParams(params Params) RouteInterface {
 	return r
 }
 
-func (r *route) SetFlag(flag Flag) RouteInterface {
+func (r *route) SetFlag(flag types.Flag) RouteInterface {
 	if r.flags.Has(defaultState) {
 		r.flags = 0
 	}
@@ -97,7 +99,7 @@ func (r *route) SetFlag(flag Flag) RouteInterface {
 	return r
 }
 
-func (r *route) On(eventType EventType, listener func(event EventInterface)) RouteInterface {
+func (r *route) On(eventType events.EventType, listener func(event EventInterface)) RouteInterface {
 	r.emitter.On(eventType, listener)
 	return r
 }
@@ -118,10 +120,10 @@ func (r *route) compile() bool {
 	}
 
 	if r.name == "" {
-		name := getFuncName(r.handler)
+		name := helpers.GetFuncName(r.handler)
 		name = strings.TrimPrefix(name, "main.")
 		name = strings.TrimSuffix(name, "-fm")
-		name = ToUnderscore(name)
+		name = helpers.ToUnderscore(name)
 
 		// trim special characters and suffixes
 		for i, s := range strings.Split(name, ".") {
@@ -143,7 +145,7 @@ func (r *route) compile() bool {
 	var err error
 	path, rePath, lastIndex, paramCount := r.path, "", 0, 0
 	if strings.IndexByte(path, '{') != strings.IndexByte(path, '}') { // -1 != -1
-		r.path = ReplaceAllStringSubmatchFunc(reRoutePathParams, path, func(m []string, i int) string {
+		r.path = helpers.ReplaceAllStringSubmatchFunc(reRoutePathParams, path, func(m []string, i int) string {
 			attr, ok := r.params[m[1]]
 			if ok && attr.compiled {
 				panic(fmt.Sprintf(`gowl: path "%s" has a duplicated parameter "%s"`, path, m[1]))
@@ -213,7 +215,7 @@ func (r *route) compile() bool {
 
 func newRoute(methods []string, path string, handler Handler) *route {
 	return &route{
-		emitter: make(EventEmitter),
+		emitter: make(events.Emitter),
 		methods: methods,
 		path:    path,
 		handler: handler,
@@ -225,7 +227,7 @@ func newRoute(methods []string, path string, handler Handler) *route {
 // RouterInterface
 type RouterInterface interface {
 	SetPrefix(path string)
-	SetFlag(flag Flag)
+	SetFlag(flag types.Flag)
 
 	Match(path string, handler Handler, method ...string) RouteInterface
 	HEAD(path string, handler Handler) RouteInterface
@@ -238,17 +240,17 @@ type RouterInterface interface {
 	TRACE(path string, handler Handler) RouteInterface
 	CONNECT(path string, handler Handler) RouteInterface
 
-	On(eventType EventType, listener func(event EventInterface))
+	On(eventType events.EventType, listener func(event EventInterface))
 
 	compile() (routes []*route, ok bool)
 }
 
 // router
 type router struct {
-	emitter  EventEmitter
+	emitter  events.Emitter
 	routes   []*route
 	prefix   string
-	flags    Flag
+	flags    types.Flag
 	compiled bool
 }
 
@@ -257,7 +259,7 @@ func (r *router) SetPrefix(path string) {
 	r.prefix = path
 }
 
-func (r *router) SetFlag(flag Flag) {
+func (r *router) SetFlag(flag types.Flag) {
 	if r.flags.Has(defaultState) {
 		r.flags = 0
 	}
@@ -306,7 +308,7 @@ func (r *router) CONNECT(path string, handler Handler) RouteInterface {
 	return r.Match(path, handler, CONNECT)
 }
 
-func (r *router) On(eventType EventType, listener func(event EventInterface)) {
+func (r *router) On(eventType events.EventType, listener func(event EventInterface)) {
 	r.emitter.On(eventType, listener)
 }
 
@@ -345,9 +347,9 @@ func (r *router) compile() (routes []*route, ok bool) {
 	return
 }
 
-func NewRouter(flags Flag) RouterInterface {
+func NewRouter(flags types.Flag) RouterInterface {
 	return &router{
-		emitter: make(EventEmitter),
+		emitter: make(events.Emitter),
 		routes:  make([]*route, 0),
 		flags:   flags | defaultState,
 	}
@@ -357,7 +359,7 @@ func NewRouter(flags Flag) RouterInterface {
 type compiledRouter struct {
 	routes   []*route
 	names    map[string]int
-	emitter  EventEmitter
+	emitter  events.Emitter
 	compiled bool
 }
 
@@ -426,10 +428,10 @@ func (r *compiledRouter) allowedMethods(path string) (methods []string) {
 	return
 }
 
-func (r *compiledRouter) match(method, path string) (*route, StringMap, Flag) {
+func (r *compiledRouter) match(method, path string) (*route, types.StringMap, types.Flag) {
 	var pathTrailingSlash = path[len(path)-1] == '/'
 	var methodNotAllowed bool
-	var flag Flag
+	var flag types.Flag
 
 	for _, route := range r.routes {
 		var p = path
@@ -464,13 +466,13 @@ func (r *compiledRouter) match(method, path string) (*route, StringMap, Flag) {
 		}
 
 		// match if any method allowed or method is explicitly defined
-		if len(route.methods) == 0 || IndexString(method, route.methods) != -1 {
+		if len(route.methods) == 0 || helpers.IndexString(method, route.methods) != -1 {
 			if redirectTrailingSlash {
 				return nil, nil, RedirectTrailingSlash
 			}
 
 			// extract parameters from path
-			params := make(StringMap)
+			params := make(types.StringMap)
 			if match != nil {
 				subexpNames := route.rePath.SubexpNames()
 				for i, name := range subexpNames[1:] {
@@ -479,7 +481,7 @@ func (r *compiledRouter) match(method, path string) (*route, StringMap, Flag) {
 						attr := route.params[name]
 						value = attr.DefaultValue
 					}
-					params[name] = value
+					params.Set(name, value)
 				}
 			}
 			return route, params, flag
@@ -509,7 +511,7 @@ func (r *compiledRouter) find(name string) *route {
 	return nil
 }
 
-func (r *compiledRouter) url(name string, params StringMap) *url.URL {
+func (r *compiledRouter) url(name string, params types.StringMap) *url.URL {
 	route := r.find(name)
 	if route == nil {
 		panic(fmt.Sprintf(`gowl: cannot find route with name "%s"`, name))
@@ -522,7 +524,7 @@ func (r *compiledRouter) url(name string, params StringMap) *url.URL {
 
 	path := route.path
 	if strings.IndexByte(path, '{') != strings.IndexByte(path, '}') { // -1 != -1
-		path = ReplaceAllStringSubmatchFunc(reRoutePathParams, path, func(m []string, _ int) string {
+		path = helpers.ReplaceAllStringSubmatchFunc(reRoutePathParams, path, func(m []string, _ int) string {
 			value, ok := params[m[1]]
 			if !ok { // if parameter not given, try to pick default
 				if value = route.params[m[1]].DefaultValue; value == "" {
@@ -563,7 +565,7 @@ func newCompiledRouter() *compiledRouter {
 	return &compiledRouter{
 		routes:  make([]*route, 0),
 		names:   make(map[string]int),
-		emitter: make(EventEmitter),
+		emitter: make(events.Emitter),
 	}
 }
 
@@ -602,8 +604,4 @@ func assertPath(path string) {
 	next:
 		i++
 	}
-}
-
-func getFuncName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

@@ -1,4 +1,4 @@
-package gowl
+package types
 
 type Flag uint32
 

@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/lokhman/gowl/types"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +33,7 @@ func getMainStackTrace(stack errors.StackTrace) errors.StackTrace {
 
 func ErrorResponse(statusCode int, debug string) ResponseInterface {
 	response := NewResponse(statusCode, func(w io.Writer) error {
-		return ErrorTemplate.Execute(w, StringMap{
+		return ErrorTemplate.Execute(w, types.StringMap{
 			"name":   fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode)),
 			"server": ServerName,
 			"debug":  debug,
