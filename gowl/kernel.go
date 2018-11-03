@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/lokhman/gowl/console"
 )
 
 const (
@@ -61,7 +61,7 @@ func init() {
 		fmt.Fprintln(out, "\n\nThe commands are:")
 		commands := make([]string, 0)
 		kernel.commands.Range(func(_, command interface{}) bool {
-			c := command.(CommandInterface)
+			c := command.(console.CommandInterface)
 			help := strings.Replace(c.Help(), "\n", "\n    \t", -1)
 			commands = append(commands, "  "+c.Name()+"\n    \t"+help)
 			return true
@@ -72,8 +72,8 @@ func init() {
 		flag.PrintDefaults()
 	}
 
-	RegisterCommand(NewCommand("run", "run registered servers", runCommand))
-	RegisterCommand(NewCommand("info", "display information about registered servers", infoCommand))
+	RegisterCommand(console.NewCommand("run", "run registered servers", runCommand))
+	RegisterCommand(console.NewCommand("info", "display information about registered servers", infoCommand))
 }
 
 func ExecPath() string {
@@ -88,7 +88,7 @@ func DebugMode() bool {
 	return *_debug
 }
 
-func RegisterCommand(command CommandInterface) {
+func RegisterCommand(command console.CommandInterface) {
 	name := command.Name()
 	if _, ok := kernel.commands.Load(name); ok {
 		panic(fmt.Sprintf(`gowl: command "%s" is already registered`, name))
@@ -117,54 +117,11 @@ func Run(server ...ServerInterface) {
 	}
 
 	if name := flag.Arg(0); name != "" {
-		out := &output{stdout, stderr}
+		out := console.NewOutput(stdout, stderr)
 		getCommand(name).Execute(out)
 		return
 	}
 	flag.Usage()
-}
-
-func runCommand(out OutputInterface) {
-	var stack errgroup.Group
-	if addr := *_server; addr != "" {
-		out.Printf("Starting server... %s\n", addr)
-		stack.Go(getServer(addr).Listen)
-	} else {
-		count := 0
-		kernel.servers.Range(func(addr, server interface{}) bool {
-			out.Printf("Starting server... %s\n", addr.(string))
-			stack.Go(server.(ServerInterface).Listen)
-			count++
-			return true
-		})
-		if count == 0 {
-			out.Errorln("No registered servers")
-			return
-		}
-	}
-	if err := stack.Wait(); err != nil {
-		Error.Fatal(err)
-	}
-}
-
-func infoCommand(out OutputInterface) {
-	if addr := *_server; addr != "" {
-		out.Println(getServer(addr))
-		return
-	}
-
-	i := 1
-	kernel.servers.Range(func(_, server interface{}) bool {
-		str := fmt.Sprintf("Server #%d", i)
-		if i > 1 {
-			out.Println()
-		}
-		out.Println(str)
-		out.Println(strings.Repeat("-", len(str)))
-		out.Println(server.(ServerInterface).String())
-		i++
-		return true
-	})
 }
 
 func getServer(addr string) ServerInterface {
@@ -175,12 +132,12 @@ func getServer(addr string) ServerInterface {
 	return server.(ServerInterface)
 }
 
-func getCommand(name string) CommandInterface {
+func getCommand(name string) console.CommandInterface {
 	command, ok := kernel.commands.Load(name)
 	if !ok {
 		fatal(`Command "%s" is not registered`, name)
 	}
-	return command.(CommandInterface)
+	return command.(console.CommandInterface)
 }
 
 func fatal(format string, a ...interface{}) {
