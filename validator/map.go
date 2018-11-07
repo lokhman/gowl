@@ -21,7 +21,7 @@ func (c Map) Validate(value interface{}, flags types.Flag) ErrorInterface {
 		key := kv.Interface()
 		constraints, ok := c[key]
 		if !ok && !flags.Has(AllowMissingFields) {
-			return NewConstraintError(c, `key "%v" is missing in the constraint`, key)
+			return NewConstraintError(c, "key `%v` is missing in the constraint", key)
 		} else if len(constraints) == 0 {
 			continue
 		}
@@ -60,7 +60,7 @@ fast:
 		for key := range c {
 			kv := reflect.ValueOf(key)
 			if !kv.Type().AssignableTo(kt) || !v.MapIndex(kv).IsValid() {
-				return NewConstraintError(c, `key "%v" is not expected in the constraint`, key)
+				return NewConstraintError(c, "key `%v` is not expected in the constraint", key)
 			}
 		}
 	}
