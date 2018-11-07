@@ -78,5 +78,5 @@ func (_ Struct) Strict() bool {
 }
 
 func (_ Struct) Name() string {
-	return "struct"
+	return "Struct"
 }

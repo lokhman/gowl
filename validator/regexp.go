@@ -38,7 +38,7 @@ func (_ regexp_) Strict() bool {
 }
 
 func (_ regexp_) Name() string {
-	return "regexp"
+	return "Regexp"
 }
 
 func Regexp(expr string) ConstraintInterface {

@@ -72,5 +72,5 @@ func (_ Map) Strict() bool {
 }
 
 func (_ Map) Name() string {
-	return "map"
+	return "Map"
 }

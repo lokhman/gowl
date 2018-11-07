@@ -32,7 +32,7 @@ func (_ Length) Strict() bool {
 }
 
 func (_ Length) Name() string {
-	return "length"
+	return "Length"
 }
 
 // MinLength
@@ -60,7 +60,7 @@ func (_ MinLength) Strict() bool {
 }
 
 func (_ MinLength) Name() string {
-	return "min_length"
+	return "MinLength"
 }
 
 // MaxLength
@@ -88,5 +88,5 @@ func (_ MaxLength) Strict() bool {
 }
 
 func (_ MaxLength) Name() string {
-	return "max_length"
+	return "MaxLength"
 }

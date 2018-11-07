@@ -87,5 +87,5 @@ func (_ Each) Strict() bool {
 }
 
 func (_ Each) Name() string {
-	return "each"
+	return "Each"
 }

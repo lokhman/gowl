@@ -61,7 +61,7 @@ func checkStrict(constraints []ConstraintInterface) bool {
 	for i := len(constraints) - 1; i >= 0; i-- {
 		if constraint := constraints[i]; constraint.Strict() {
 			if i > 0 {
-				panic(fmt.Sprintf(`gowl/validator: constraint "%s" should go first`, constraint.Name()))
+				panic(fmt.Sprintf(`gowl/validator: constraint %s should go first`, constraint.Name()))
 			}
 			return true
 		}

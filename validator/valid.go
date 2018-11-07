@@ -21,7 +21,7 @@ func (_ Valid) Strict() bool {
 }
 
 func (_ Valid) Name() string {
-	return "valid"
+	return "Valid"
 }
 
 const (

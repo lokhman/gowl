@@ -21,7 +21,7 @@ func (_ Required) Strict() bool {
 }
 
 func (_ Required) Name() string {
-	return "required"
+	return "Required"
 }
 
 const (

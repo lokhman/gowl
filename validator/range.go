@@ -120,7 +120,7 @@ func (_ range_) Strict() bool {
 }
 
 func (_ range_) Name() string {
-	return "range"
+	return "Range"
 }
 
 func checkRangeArgument(v reflect.Value) reflect.Type {

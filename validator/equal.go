@@ -26,7 +26,7 @@ func (_ equal) Strict() bool {
 }
 
 func (_ equal) Name() string {
-	return "equal"
+	return "Equal"
 }
 
 func Equal(value interface{}) ConstraintInterface {
@@ -51,7 +51,7 @@ func (_ notEqual) Strict() bool {
 }
 
 func (_ notEqual) Name() string {
-	return "not_equal"
+	return "NotEqual"
 }
 
 func NotEqual(value interface{}) ConstraintInterface {
@@ -75,7 +75,7 @@ func (_ identical) Strict() bool {
 }
 
 func (_ identical) Name() string {
-	return "identical"
+	return "Identical"
 }
 
 func Identical(value interface{}) ConstraintInterface {
@@ -99,7 +99,7 @@ func (_ notIdentical) Strict() bool {
 }
 
 func (_ notIdentical) Name() string {
-	return "not_identical"
+	return "NotIdentical"
 }
 
 func NotIdentical(value interface{}) ConstraintInterface {

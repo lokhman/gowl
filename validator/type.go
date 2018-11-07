@@ -19,5 +19,5 @@ func (_ Type) Strict() bool {
 }
 
 func (_ Type) Name() string {
-	return "type"
+	return "Type"
 }
