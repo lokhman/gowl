@@ -8,21 +8,6 @@ import (
 
 var reTag = regexp.MustCompile(`([^,=]+)(?:=(\[.*?]|".*?"|[^,]+))?`)
 
-func ParseTag(tag string) (constraints []ConstraintInterface, err error) {
-	for _, match := range reTag.FindAllStringSubmatch(tag, -1) {
-		ci, ok := TagOptions[match[1]]
-		if !ok {
-			return nil, fmt.Errorf(`gowl/validator: unknown tag option "%s"`, match[1])
-		}
-		constraint, err := ci(TagOption{match[1], match[2]})
-		if err != nil {
-			return nil, err
-		}
-		constraints = append(constraints, constraint)
-	}
-	return
-}
-
 type TagOption struct {
 	Name  string
 	Value string
@@ -62,6 +47,14 @@ func (o TagOption) WithUint(lambda func(v uint) ConstraintInterface) (Constraint
 	return lambda(uint(v)), nil
 }
 
+func (o TagOption) WithFloat(lambda func(v float64) ConstraintInterface) (ConstraintInterface, error) {
+	v, err := strconv.ParseFloat(o.Value, 64)
+	if err != nil {
+		return nil, fmt.Errorf(`gowl/validator: tag option "%s" has invalid float value: %s`, o.Name, err)
+	}
+	return lambda(v), nil
+}
+
 func (o TagOption) WithString(lambda func(v string) ConstraintInterface) (ConstraintInterface, error) {
 	n := len(o.Value)
 	if n < 2 || o.Value[0] != '"' || o.Value[n-1] != '"' {
@@ -80,6 +73,21 @@ func (o TagOption) WithTag(lambda func(v []ConstraintInterface) ConstraintInterf
 		return nil, err
 	}
 	return lambda(v), nil
+}
+
+func ParseTag(tag string) (constraints []ConstraintInterface, err error) {
+	for _, match := range reTag.FindAllStringSubmatch(tag, -1) {
+		ci, ok := TagOptions[match[1]]
+		if !ok {
+			return nil, fmt.Errorf(`gowl/validator: unknown tag option "%s"`, match[1])
+		}
+		constraint, err := ci(TagOption{match[1], match[2]})
+		if err != nil {
+			return nil, err
+		}
+		constraints = append(constraints, constraint)
+	}
+	return
 }
 
 var TagOptions = map[string]func(o TagOption) (constraint ConstraintInterface, err error){
