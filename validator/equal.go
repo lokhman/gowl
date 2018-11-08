@@ -10,12 +10,16 @@ import (
 
 // Equal
 type equal struct {
-	value interface{}
+	name     string
+	value    interface{}
+	inverted bool
 }
 
 func (c equal) Validate(value interface{}, _ types.Flag) ErrorInterface {
 	v := helpers.Indirect(reflect.ValueOf(value))
-	if !v.IsValid() || !isEqual(v.Interface(), c.value) {
+	if equal := v.IsValid() && isEqual(v.Interface(), c.value); equal && c.inverted {
+		return NewConstraintError(c, "this value should not be equal to `%v`", c.value)
+	} else if !equal {
 		return NewConstraintError(c, "this value should be equal to `%v`", c.value)
 	}
 	return nil
@@ -25,46 +29,29 @@ func (_ equal) Strict() bool {
 	return false
 }
 
-func (_ equal) Name() string {
-	return "Equal"
+func (c equal) Name() string {
+	return c.name
 }
 
 func Equal(value interface{}) ConstraintInterface {
-	return equal{value}
-}
-
-// NotEqual
-type notEqual struct {
-	value interface{}
-}
-
-func (c notEqual) Validate(value interface{}, _ types.Flag) ErrorInterface {
-	v := helpers.Indirect(reflect.ValueOf(value))
-	if v.IsValid() && isEqual(v.Interface(), c.value) {
-		return NewConstraintError(c, "this value should not be equal to `%v`", c.value)
-	}
-	return nil
-}
-
-func (_ notEqual) Strict() bool {
-	return false
-}
-
-func (_ notEqual) Name() string {
-	return "NotEqual"
+	return equal{"Equal", value, false}
 }
 
 func NotEqual(value interface{}) ConstraintInterface {
-	return notEqual{value}
+	return equal{"NotEqual", value, true}
 }
 
 // Identical
 type identical struct {
-	value interface{}
+	name     string
+	value    interface{}
+	inverted bool
 }
 
 func (c identical) Validate(value interface{}, _ types.Flag) ErrorInterface {
-	if !isEqual(value, c.value) {
+	if equal := isEqual(value, c.value); equal && c.inverted {
+		return NewConstraintError(c, "this value should not be identical to `%v`", c.value)
+	} else if !equal {
 		return NewConstraintError(c, "this value should be identical to `%v`", c.value)
 	}
 	return nil
@@ -74,36 +61,16 @@ func (_ identical) Strict() bool {
 	return false
 }
 
-func (_ identical) Name() string {
-	return "Identical"
+func (c identical) Name() string {
+	return c.name
 }
 
 func Identical(value interface{}) ConstraintInterface {
-	return identical{value}
-}
-
-// NotIdentical
-type notIdentical struct {
-	value interface{}
-}
-
-func (c notIdentical) Validate(value interface{}, _ types.Flag) ErrorInterface {
-	if isEqual(value, c.value) {
-		return NewConstraintError(c, "this value should not be identical to `%v`", c.value)
-	}
-	return nil
-}
-
-func (_ notIdentical) Strict() bool {
-	return false
-}
-
-func (_ notIdentical) Name() string {
-	return "NotIdentical"
+	return identical{"Identical", value, false}
 }
 
 func NotIdentical(value interface{}) ConstraintInterface {
-	return notIdentical{value}
+	return identical{"NotIdentical", value, true}
 }
 
 // ...

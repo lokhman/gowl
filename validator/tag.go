@@ -206,13 +206,13 @@ var TagOptions = map[string]func(o TagOption) (constraint ConstraintInterface, e
 		return o.WithString(func(v string) ConstraintInterface { return Type(v) })
 	},
 	"len": func(o TagOption) (constraint ConstraintInterface, err error) {
-		return o.WithUint(func(v uint64) ConstraintInterface { return Length(v) })
+		return o.WithUint(func(v uint64) ConstraintInterface { return Length(uint(v)) })
 	},
 	"minlen": func(o TagOption) (constraint ConstraintInterface, err error) {
-		return o.WithUint(func(v uint64) ConstraintInterface { return MinLength(v) })
+		return o.WithUint(func(v uint64) ConstraintInterface { return MinLength(uint(v)) })
 	},
 	"maxlen": func(o TagOption) (constraint ConstraintInterface, err error) {
-		return o.WithUint(func(v uint64) ConstraintInterface { return MaxLength(v) })
+		return o.WithUint(func(v uint64) ConstraintInterface { return MaxLength(uint(v)) })
 	},
 	"eq": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.WithValue(func(v interface{}) ConstraintInterface { return Equal(v) })

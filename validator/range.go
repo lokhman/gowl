@@ -16,80 +16,81 @@ const (
 )
 
 type range_ struct {
-	typ  reflect.Type
-	min  *reflect.Value
-	max  *reflect.Value
-	incl bool
+	name     string
+	type_    reflect.Type
+	min      *reflect.Value
+	max      *reflect.Value
+	included bool
 }
 
 func (c range_) Validate(value interface{}, _ types.Flag) ErrorInterface {
 	v := helpers.Indirect(reflect.ValueOf(value))
-	if !v.IsValid() || v.Type() != c.typ {
+	if !v.IsValid() || v.Type() != c.type_ {
 		return UnexpectedTypeError(c, value)
 	}
 
-	switch c.typ.Kind() {
+	switch c.type_.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		value := v.Int()
 		if c.min != nil {
-			if min := c.min.Int(); c.incl && value < min {
+			if min := c.min.Int(); c.included && value < min {
 				return NewConstraintError(c, rangeTooLowInclError, min)
-			} else if !c.incl && value <= min {
+			} else if !c.included && value <= min {
 				return NewConstraintError(c, rangeTooLowError, min)
 			}
 		}
 		if c.max != nil {
-			if max := c.max.Int(); c.incl && value > max {
+			if max := c.max.Int(); c.included && value > max {
 				return NewConstraintError(c, rangeTooHighInclError, max)
-			} else if !c.incl && value >= max {
+			} else if !c.included && value >= max {
 				return NewConstraintError(c, rangeTooHighError, max)
 			}
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		value := v.Uint()
 		if c.min != nil {
-			if min := c.min.Uint(); c.incl && value < min {
+			if min := c.min.Uint(); c.included && value < min {
 				return NewConstraintError(c, rangeTooLowInclError, min)
-			} else if !c.incl && value <= min {
+			} else if !c.included && value <= min {
 				return NewConstraintError(c, rangeTooLowError, min)
 			}
 		}
 		if c.max != nil {
-			if max := c.max.Uint(); c.incl && value > max {
+			if max := c.max.Uint(); c.included && value > max {
 				return NewConstraintError(c, rangeTooHighInclError, max)
-			} else if !c.incl && value >= max {
+			} else if !c.included && value >= max {
 				return NewConstraintError(c, rangeTooHighError, max)
 			}
 		}
 	case reflect.Float32, reflect.Float64:
 		value := v.Float()
 		if c.min != nil {
-			if min := c.min.Float(); c.incl && value < min {
+			if min := c.min.Float(); c.included && value < min {
 				return NewConstraintError(c, rangeTooLowInclError, min)
-			} else if !c.incl && value <= min {
+			} else if !c.included && value <= min {
 				return NewConstraintError(c, rangeTooLowError, min)
 			}
 		}
 		if c.max != nil {
-			if max := c.max.Float(); c.incl && value > max {
+			if max := c.max.Float(); c.included && value > max {
 				return NewConstraintError(c, rangeTooHighInclError, max)
-			} else if !c.incl && value >= max {
+			} else if !c.included && value >= max {
 				return NewConstraintError(c, rangeTooHighError, max)
 			}
 		}
 	case reflect.String:
 		value := v.String()
 		if c.min != nil {
-			if min := c.min.String(); c.incl && value < min {
+			if min := c.min.String(); c.included && value < min {
 				return NewConstraintError(c, rangeTooLowInclError, min)
-			} else if !c.incl && value <= min {
+			} else if !c.included && value <= min {
 				return NewConstraintError(c, rangeTooLowError, min)
 			}
 		}
 		if c.max != nil {
-			if max := c.max.String(); c.incl && value > max {
+			if max := c.max.String(); c.included && value > max {
 				return NewConstraintError(c, rangeTooHighInclError, max)
-			} else if !c.incl && value >= max {
+			} else if !c.included && value >= max {
 				return NewConstraintError(c, rangeTooHighError, max)
 			}
 		}
@@ -97,16 +98,16 @@ func (c range_) Validate(value interface{}, _ types.Flag) ErrorInterface {
 		switch value := v.Interface().(type) {
 		case time.Time:
 			if c.min != nil {
-				if min := c.min.Interface().(time.Time); c.incl && value.Before(min) {
+				if min := c.min.Interface().(time.Time); c.included && value.Before(min) {
 					return NewConstraintError(c, rangeTooLowInclError, min)
-				} else if !c.incl && (value.Equal(min) || value.Before(min)) {
+				} else if !c.included && (value.Equal(min) || value.Before(min)) {
 					return NewConstraintError(c, rangeTooLowError, min)
 				}
 			}
 			if c.min != nil {
-				if min := c.min.Interface().(time.Time); c.incl && value.After(min) {
+				if min := c.min.Interface().(time.Time); c.included && value.After(min) {
 					return NewConstraintError(c, rangeTooHighInclError, min)
-				} else if !c.incl && (value.Equal(min) || value.After(min)) {
+				} else if !c.included && (value.Equal(min) || value.After(min)) {
 					return NewConstraintError(c, rangeTooHighError, min)
 				}
 			}
@@ -119,8 +120,8 @@ func (_ range_) Strict() bool {
 	return false
 }
 
-func (_ range_) Name() string {
-	return "Range"
+func (c range_) Name() string {
+	return c.name
 }
 
 func checkRangeArgument(v reflect.Value) reflect.Type {
@@ -142,25 +143,25 @@ func checkRangeArgument(v reflect.Value) reflect.Type {
 func LessThan(value interface{}) ConstraintInterface {
 	v := reflect.ValueOf(value)
 	t := checkRangeArgument(v)
-	return range_{t, nil, &v, false}
+	return range_{"LessThan", t, nil, &v, false}
 }
 
 func LessThanOrEqual(value interface{}) ConstraintInterface {
 	v := reflect.ValueOf(value)
 	t := checkRangeArgument(v)
-	return range_{t, nil, &v, true}
+	return range_{"LessThanOrEqual", t, nil, &v, true}
 }
 
 func GreaterThan(value interface{}) ConstraintInterface {
 	v := reflect.ValueOf(value)
 	t := checkRangeArgument(v)
-	return range_{t, &v, nil, false}
+	return range_{"GreaterThan", t, &v, nil, false}
 }
 
 func GreaterThanOrEqual(value interface{}) ConstraintInterface {
 	v := reflect.ValueOf(value)
 	t := checkRangeArgument(v)
-	return range_{t, &v, nil, true}
+	return range_{"GreaterThanOrEqual", t, &v, nil, true}
 }
 
 func Between(min, max interface{}) ConstraintInterface {
@@ -169,5 +170,5 @@ func Between(min, max interface{}) ConstraintInterface {
 	if minT != checkRangeArgument(maxV) {
 		panic("gowl/validator: min and max arguments should have similar types")
 	}
-	return range_{minT, &minV, &maxV, true}
+	return range_{"Between", minT, &minV, &maxV, true}
 }
