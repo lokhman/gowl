@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	rangeTooLowError      = "this value should be greater than `%v`"
-	rangeTooHighError     = "this value should be less than `%v`"
-	rangeTooLowInclError  = "this value should be `%v` or more"
-	rangeTooHighInclError = "this value should be `%v` or less"
+	rangeTooLowError      = "this value should be greater than %#v"
+	rangeTooHighError     = "this value should be less than %#v"
+	rangeTooLowInclError  = "this value should be %#v or more"
+	rangeTooHighInclError = "this value should be %#v or less"
 )
 
 type range_ struct {

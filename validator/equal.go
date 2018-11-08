@@ -17,10 +17,10 @@ type equal struct {
 
 func (c equal) Validate(value interface{}, _ types.Flag) ErrorInterface {
 	v := helpers.Indirect(reflect.ValueOf(value))
-	if equal := v.IsValid() && isEqual(v.Interface(), c.value); equal && c.inverted {
-		return NewConstraintError(c, "this value should not be equal to `%v`", c.value)
-	} else if !equal {
-		return NewConstraintError(c, "this value should be equal to `%v`", c.value)
+	if equal := v.IsValid() && isEqual(v.Interface(), c.value); c.inverted && equal {
+		return NewConstraintError(c, "this value should not be equal to %#v", c.value)
+	} else if !c.inverted && !equal {
+		return NewConstraintError(c, "this value should be equal to %#v", c.value)
 	}
 	return nil
 }
@@ -49,10 +49,10 @@ type identical struct {
 }
 
 func (c identical) Validate(value interface{}, _ types.Flag) ErrorInterface {
-	if equal := isEqual(value, c.value); equal && c.inverted {
-		return NewConstraintError(c, "this value should not be identical to `%v`", c.value)
-	} else if !equal {
-		return NewConstraintError(c, "this value should be identical to `%v`", c.value)
+	if equal := isEqual(value, c.value); c.inverted && equal {
+		return NewConstraintError(c, "this value should not be identical to %#v", c.value)
+	} else if !c.inverted && !equal {
+		return NewConstraintError(c, "this value should be identical to %#v", c.value)
 	}
 	return nil
 }
