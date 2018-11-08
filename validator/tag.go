@@ -124,7 +124,7 @@ func (o TagOption) WithValue(lambda func(v interface{}) ConstraintInterface) (Co
 	case "i32":
 		return o.WithInt(func(v int64) ConstraintInterface { return lambda(int32(v)) })
 	case "i64":
-		return o.WithInt(func(v int64) ConstraintInterface { return lambda(int64(v)) })
+		return o.WithInt(func(v int64) ConstraintInterface { return lambda(v) })
 	case "u":
 		return o.WithUint(func(v uint64) ConstraintInterface { return lambda(uint(v)) })
 	case "u8":
@@ -134,11 +134,11 @@ func (o TagOption) WithValue(lambda func(v interface{}) ConstraintInterface) (Co
 	case "u32":
 		return o.WithUint(func(v uint64) ConstraintInterface { return lambda(uint32(v)) })
 	case "u64":
-		return o.WithUint(func(v uint64) ConstraintInterface { return lambda(uint(v)) })
+		return o.WithUint(func(v uint64) ConstraintInterface { return lambda(v) })
 	case "f32":
 		return o.WithFloat(func(v float64) ConstraintInterface { return lambda(float32(v)) })
 	case "f64", "f":
-		return o.WithFloat(func(v float64) ConstraintInterface { return lambda(float64(v)) })
+		return o.WithFloat(func(v float64) ConstraintInterface { return lambda(v) })
 	default:
 		return nil, fmt.Errorf(`gowl/validator: tag option "%s" has invalid prefix "%s"`, o.Name, o.Prefix)
 	}
