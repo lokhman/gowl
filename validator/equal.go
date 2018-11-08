@@ -115,3 +115,8 @@ func isEqual(x, y interface{}) bool {
 	}
 	return reflect.DeepEqual(x, y)
 }
+
+var (
+	True  = Equal(true)
+	False = Equal(false)
+)
