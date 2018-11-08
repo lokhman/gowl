@@ -41,3 +41,14 @@ func ToUnderscore(s string) string {
 	}
 	return buf.String()
 }
+
+func StripSlashes(s string, chars string) string {
+	buf := new(strings.Builder)
+	n := len(s) - 1
+	for i, c := range s {
+		if c != '\\' || (i < n && strings.IndexByte(chars, s[i+1]) == -1) {
+			buf.WriteRune(c)
+		}
+	}
+	return buf.String()
+}
