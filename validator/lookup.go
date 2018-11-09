@@ -75,6 +75,6 @@ func Contains(value interface{}) ConstraintInterface {
 	return lookup{"Contains", value, false}
 }
 
-func NotContains(value interface{}) ConstraintInterface {
-	return lookup{"NotContains", value, true}
+func Excludes(value interface{}) ConstraintInterface {
+	return lookup{"Excludes", value, true}
 }

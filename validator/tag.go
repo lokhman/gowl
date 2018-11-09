@@ -241,6 +241,12 @@ var TagOptions = map[string]func(o TagOption) (constraint ConstraintInterface, e
 	"repsx": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.WithString(func(v string) ConstraintInterface { return RegexpPOSIX(v) })
 	},
+	"contains": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.WithValue(func(v interface{}) ConstraintInterface { return Contains(v) })
+	},
+	"excludes": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.WithValue(func(v interface{}) ConstraintInterface { return Excludes(v) })
+	},
 }
 
 func init() {
