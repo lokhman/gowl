@@ -214,14 +214,14 @@ var TagOptions = map[string]func(o TagOption) (constraint ConstraintInterface, e
 	"maxlen": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.WithUint(func(v uint64) ConstraintInterface { return MaxLength(uint(v)) })
 	},
-	"eq": func(o TagOption) (constraint ConstraintInterface, err error) {
-		return o.WithValue(func(v interface{}) ConstraintInterface { return Equal(v) })
-	},
 	"true": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.NoValue(func() ConstraintInterface { return True })
 	},
 	"false": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.NoValue(func() ConstraintInterface { return False })
+	},
+	"eq": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.WithValue(func(v interface{}) ConstraintInterface { return Equal(v) })
 	},
 	"lt": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.WithValue(func(v interface{}) ConstraintInterface { return LessThan(v) })
@@ -246,6 +246,18 @@ var TagOptions = map[string]func(o TagOption) (constraint ConstraintInterface, e
 	},
 	"excludes": func(o TagOption) (constraint ConstraintInterface, err error) {
 		return o.WithValue(func(v interface{}) ConstraintInterface { return Excludes(v) })
+	},
+	"date": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.NoValue(func() ConstraintInterface { return Date })
+	},
+	"time": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.NoValue(func() ConstraintInterface { return Time })
+	},
+	"datetime": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.NoValue(func() ConstraintInterface { return DateTime })
+	},
+	"timestamp": func(o TagOption) (constraint ConstraintInterface, err error) {
+		return o.WithString(func(v string) ConstraintInterface { return Timestamp(v) })
 	},
 }
 
